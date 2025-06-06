@@ -11,3 +11,5 @@ backend/instance/          # runtime DB lives here – don't version it
 
 # --- Node (future React) ---
 frontend/node_modules/
+ml/*.pkl
+ml/raw_data/
