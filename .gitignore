@@ -1,0 +1,13 @@
+# --- Python junk & virtual-envs ---
+__pycache__/
+*.pyc
+backend/venv/
+
+# --- Databases & ML binaries ---
+*.sqlite3
+*.pkl
+*.joblib
+backend/instance/          # runtime DB lives here – don't version it
+
+# --- Node (future React) ---
+frontend/node_modules/
