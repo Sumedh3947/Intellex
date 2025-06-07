@@ -5,8 +5,13 @@ import joblib, os
 app = Flask(__name__)
 CORS(app)
 
+BASE_DIR = os.path.dirname(__file__)
+
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "categorizer.pkl")
 categorizer = joblib.load(MODEL_PATH)
+
+ANOM_PATH = os.path.join(BASE_DIR, "anomaly.pkl")
+anomaly_model = joblib.load(ANOM_PATH)      # IsolationForest
 
 # 2️⃣  now import the models and init the DB
 from models import db, Expense, init_db
@@ -36,11 +41,16 @@ def add_expense():
     else:
         category = data["category"]
 
+    # --- NEW: anomaly score ---
+# IsolationForest returns -1 for anomaly, 1 for normal
+    is_anomaly = anomaly_model.predict([[amount]])[0] == -1
+
     exp = Expense(
-        amount=amount,
-        date=date_obj,
-        description=data.get("description", ""),
-        category=category       # 👈 stored in DB
+    amount=amount,
+    date=date_obj,
+    description=data.get("description", ""),
+    category=category,
+    is_anomaly=is_anomaly            # ← store flag
     )
     db.session.add(exp)
     db.session.commit()
@@ -52,13 +62,14 @@ def add_expense():
 def list_expenses():
     rows = Expense.query.order_by(Expense.id.desc()).all()
     return jsonify([
-        {
-            "id":        e.id,
-            "amount":    e.amount,
-            "date":      e.date.isoformat(),
-            "desc":      e.description,
-            "category":  e.category
-        } for e in rows
+    {
+        "id":        e.id,
+        "amount":    e.amount,
+        "date":      e.date.isoformat(),
+        "desc":      e.description,
+        "category":  e.category,
+        "is_anomaly": e.is_anomaly      # NEW FIELD
+    } for e in rows
     ])
 
 
